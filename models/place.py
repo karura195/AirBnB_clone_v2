@@ -16,6 +16,11 @@ if models.is_db == "db":
                                Column('amenity_id', String(60),
                                       ForeignKey('amenities.id'),
                                       nullable=False))
+    place_amenity = Table('place_amenity', Base.metadata,
+                          Column('place_id', String(60),
+                                 ForeignKey('places.id'),
+                                 nullable=False),
+                          column_amenity)
 
 
 class Place(BaseModel):

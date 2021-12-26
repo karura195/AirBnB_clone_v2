@@ -4,16 +4,25 @@ from models.base_model import BaseModel, Base
 import models
 from models.city import City
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql.sqltypes import String
+from sqlalchemy import Column, String
+from os import getenv
 
 
-class State(BaseModel):
+class State(BaseModel, Base):
     """ State class """
-    if models.is_db == "db":
+    if models.is_type == "db":
         __tablename__ = 'states'
         name = Column(String(128), nullable=False)
-        cities = relationship('City')
+        cities = relationship('City', backref='state', cascade='delete')
     else:
         name = ""
-        cities = models.storage.all(City)
+
+    if models.is_type != 'db':
+        @property
+        def cities(self):
+            cities_list = []
+            all_cities = models.storage.all(City).values()
+            for cit in all_cities:
+                if cit.state_id == self.id:
+                    cities_list.append(cit)
+            return cities_list

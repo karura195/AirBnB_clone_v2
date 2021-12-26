@@ -8,19 +8,14 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, Float, String, ForeignKey, Table
 
 
-if models.is_db == "db":
+if models.is_type == "db":
     relationship_table = Table('place_amenity', Base.metadata,
                                Column('place_id', String(60),
                                       ForeignKey('places.id'),
-                                      nullable=False),
+                                      primary_key=True),
                                Column('amenity_id', String(60),
                                       ForeignKey('amenities.id'),
-                                      nullable=False))
-    place_amenity = Table('place_amenity', Base.metadata,
-                          Column('place_id', String(60),
-                                 ForeignKey('places.id'),
-                                 nullable=False),
-                          column_amenity)
+                                      primary_key=True))
 
 
 class Place(BaseModel):
@@ -29,29 +24,30 @@ class Place(BaseModel):
     city_id = Column(String(60), ForeignKey('cities.id'), nullable=False)
     user_id = Column(String(60), ForeignKey('users.id'), nullable=False)
     name = Column(String(128), nullable=False)
-    description = Column(String(1024), nullable=False)
+    description = Column(String(1024))
     number_rooms = Column(Integer, default=0, nullable=False)
     number_bathrooms = Column(Integer, default=0, nullable=False)
     max_guest = Column(Integer, default=0, nullable=False)
     price_by_night = Column(Integer, default=0, nullable=False)
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float nullable=True)
+    latitude = Column(Float)
+    longitude = Column(Float)
     reviews = relationship('Review', backref='place', cascade='delete')
     amenities = relationship('Amenity', secondary='place_amenity',
                              viewonly=False)
     amenity_ids = []
 
-    if models.is_db != 'db':
+    if models.is_type != 'db':
         @property
         def reviews(self):
             """ Place reviews """
-            return models.storage.all(Review)
+            rv = models.storage.all(Review).values()
+            return {re for re in rv if re.place_id == self.id}
 
         @property
         def amenities(self):
             """ Place amenities """
-            self.amenity_ids = models.storage.all(Amenity)
-            return self.amenity_ids
+            ob = models.storage.all(Amenity).values()
+            return [obj for obj in ob if obj.id in self.amenity_ids]
 
         @amenities.setter
         def amenities(self, value):

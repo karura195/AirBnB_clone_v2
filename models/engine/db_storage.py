@@ -3,9 +3,9 @@
 Este módulo define una clase para administrar el almacenamiento
 de la base de datos para el clon de hbnb
 """
-from models.base_model import BaseModel, Base
-from sqlalchemy import (create_engine)
-from sqlalchemy.orm import sessionmaker
+from models.base_model import Base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
 from models.amenity import Amenity
 from models.city import City
 from models.place import Place
@@ -13,14 +13,7 @@ from models.review import Review
 from models.state import State
 from models.user import User
 from os import getenv
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm import sessionmaker
-
-classes = {
-    'BaseModel': BaseModel, 'User': User, 'Place': Place,
-    'State': State, 'City': City, 'Amenity': Amenity,
-    'Review': Review
-}
+import models
 
 
 class DBStorage:
@@ -46,31 +39,24 @@ class DBStorage:
         """
         consulta sobre la sesión actual de la base de datos
         """
-        dic_of_objects = {}
-        if cls and cls in classes.values():
-            all_objetcs = self.__session.query(cls).all()
-            for obj in all_objetcs:
-                key = "{}.{}".format(obj.__class__.__name__, obj.id)
-                value = obj
-                dic_of_objects[key] = value
-        elif cls is None:
-            # acá guarda clase por clase todas sus filas en caso tal de que
-            # la clase No esté vacía.
-            for cls in classes.values():
-                all_objetcs = self.__session.query(cls).all()
-                for obj in all_objetcs:
-                    key = "{}.{}".format(obj.__class__.__name__, obj.id)
-                    value = obj
-                    dic_of_objects[key] = value
-        return dic_of_objects
+        if not cls:
+            data_list = self.__session.query(Amenity)
+            data_list.extend(self.__session.query(City))
+            data_list.extend(self.__session.query(Place))
+            data_list.extend(self.__session.query(Review))
+            data_list.extend(self.__session.query(State))
+            data_list.extend(self.__session.query(User))
+        else:
+            data_list = data_list = self.__session.query(cls)
+        return {'{}.{}'.format(type(obj).__name__, obj.id): obj
+                for obj in data_list}
 
     def new(self, obj):
         """
         Método para agregar el objeto a la
         sesión actual de la base de datos
         """
-        if obj:
-            self.__session.add(obj)
+        self.__session.add(obj)
 
     def save(self):
         """
@@ -86,7 +72,7 @@ class DBStorage:
         """
         # obj = cls.id, dentro de una clase, sería una fila de esa clase
         if obj:
-            self.__session.delete((obj))
+            self.__session.delete(obj)
 
     def reload(self):
         """

@@ -26,11 +26,11 @@ def c(text):
     return 'C ' + text.replace('_', ' ')
 
 
-@app.route('/python')
-@app.route('/python/<text>')
+@app.route('/python', strict_slashes=False)
+@app.route('/python/<text>', strict_slashes=False)
 def pythoncool(text='is cool'):
     """Display "Python" followed by the value of the text variable"""
-    return "Python " + text.replace('_', ' ')
+    return 'Python ' + text.replace('_', ' ')
 
 
 if __name__ == '__main__':
